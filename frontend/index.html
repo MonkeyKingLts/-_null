@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>电商评论情感分析平台</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">SentiShop</div>
+      <div class="brand-sub">电商用户评论情感倾向分析平台<br />本科毕业设计示例系统</div>
+      <nav>
+        <a class="nav-item active" data-section="dashboard">数据概览</a>
+        <a class="nav-item" data-section="analyze">单条分析</a>
+        <a class="nav-item" data-section="batch">批量导入</a>
+        <a class="nav-item" data-section="reviews">评论管理</a>
+        <a class="nav-item" data-section="keywords">关键词洞察</a>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1 id="page-title">数据概览</h1>
+          <p>基于 SnowNLP 的中文评论情感分析演示系统</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-secondary" id="btn-reload-sample">加载示例数据</button>
+          <button class="btn btn-secondary" id="btn-export">导出 CSV</button>
+          <button class="btn btn-danger" id="btn-clear">清空数据</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="section active">
+        <div class="cards" id="stat-cards"></div>
+        <div class="grid-2">
+          <div class="panel">
+            <h2>情感分布</h2>
+            <div class="chart-box"><canvas id="sentiment-chart"></canvas></div>
+          </div>
+          <div class="panel">
+            <h2>商品平均情感得分</h2>
+            <div class="chart-box"><canvas id="product-chart"></canvas></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>近期情感趋势</h2>
+          <div class="chart-box"><canvas id="trend-chart"></canvas></div>
+        </div>
+      </section>
+
+      <section id="analyze" class="section">
+        <div class="panel">
+          <h2>单条评论情感分析</h2>
+          <div class="form-row">
+            <div>
+              <label for="single-product">商品名称</label>
+              <input id="single-product" placeholder="例如：无线蓝牙耳机" />
+            </div>
+            <div>
+              <label for="single-content">评论内容</label>
+              <textarea id="single-content" placeholder="请输入用户评论文本..."></textarea>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-analyze">立即分析</button>
+          <button class="btn btn-secondary" id="btn-save-review">分析并保存</button>
+          <div class="result-box" id="analyze-result">分析结果将显示在这里。</div>
+        </div>
+      </section>
+
+      <section id="batch" class="section">
+        <div class="grid-2">
+          <div class="panel">
+            <h2>批量粘贴评论</h2>
+            <p class="tip">每行一条评论，可使用“商品名称|评论内容”格式。</p>
+            <textarea id="batch-text" placeholder="保温杯|保温效果很好，一夜后仍然温热&#10;机械键盘|键帽松动，体验较差"></textarea>
+            <div style="margin-top:12px;">
+              <button class="btn btn-primary" id="btn-batch-submit">批量分析并保存</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>CSV 文件导入</h2>
+            <p class="tip">支持 UTF-8 或 GBK 编码，需包含“评论内容”列，可选“商品名称”列。</p>
+            <input type="file" id="csv-file" accept=".csv" />
+            <div style="margin-top:12px;">
+              <button class="btn btn-primary" id="btn-upload">上传并分析</button>
+              <a class="btn btn-secondary" href="/api/sample-csv" download>下载样例 CSV</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reviews" class="section">
+        <div class="panel">
+          <h2>评论列表</h2>
+          <div class="filters">
+            <select id="filter-sentiment">
+              <option value="">全部情感</option>
+              <option value="positive">正面</option>
+              <option value="neutral">中性</option>
+              <option value="negative">负面</option>
+            </select>
+            <input id="filter-product" placeholder="按商品名称筛选" />
+            <input id="filter-keyword" placeholder="按评论关键词筛选" />
+            <button class="btn btn-primary" id="btn-search">查询</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>商品</th>
+                  <th>评论内容</th>
+                  <th>得分</th>
+                  <th>情感</th>
+                  <th>来源</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="review-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="keywords" class="section">
+        <div class="grid-2">
+          <div class="panel">
+            <h2>高频关键词</h2>
+            <div class="filters">
+              <select id="keyword-sentiment">
+                <option value="">全部评论</option>
+                <option value="positive">正面评论</option>
+                <option value="neutral">中性评论</option>
+                <option value="negative">负面评论</option>
+              </select>
+              <button class="btn btn-primary" id="btn-load-keywords">刷新关键词</button>
+            </div>
+            <div class="keyword-list" id="keyword-list"></div>
+          </div>
+          <div class="panel">
+            <h2>关键词说明</h2>
+            <p class="tip">
+              系统使用 jieba 对评论进行中文分词，并统计去除停用词后的高频词。
+              通过对比正面与负面评论关键词，可以帮助运营人员快速了解用户关注点，
+              例如“续航”“做工”“客服”等维度。
+            </p>
+            <p class="tip">
+              情感得分由 SnowNLP 计算，范围 0 到 1。得分 ≥ 0.6 判定为正面，
+              ≤ 0.4 判定为负面，其余为中性。
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
